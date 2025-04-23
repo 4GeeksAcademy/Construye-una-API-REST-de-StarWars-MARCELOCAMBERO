@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, People, Planets
+from models import db, User, People, Planets, Favorite
 #from models import Person
 
 app = Flask(__name__)
@@ -70,6 +70,57 @@ def get_planet(planet_id):
     if planet is None:
         return jsonify({"error": "Planet not found"}), 404
     return jsonify(planet.serialize()), 200
+
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    users = User.query.all()
+    results = [user.serialize() for user in users]
+    return jsonify(results), 200
+
+@app.route('/users/favorites', methods=['GET'])
+def get_user_favorites():
+    user_id = 1  # Temporal, asumimos que es el usuario con ID 1
+    favorites = Favorite.query.filter_by(user_id=user_id).all()
+    results = [favorite.serialize() for favorite in favorites]
+    return jsonify(results), 200
+
+@app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
+def add_favorite_planet(planet_id):
+    user_id = 1  # Temporal
+    favorite = Favorite(user_id=user_id, planet_id=planet_id)
+    db.session.add(favorite)
+    db.session.commit()
+    return jsonify({"msg": "Planet added to favorites"}), 201
+
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def add_favorite_people(people_id):
+    user_id = 1  # Temporal
+    favorite = Favorite(user_id=user_id, people_id=people_id)
+    db.session.add(favorite)
+    db.session.commit()
+    return jsonify({"msg": "People added to favorites"}), 201
+
+@app.route('/favorite/planet/<int:planet_id>', methods=['DELETE'])
+def delete_favorite_planet(planet_id):
+    user_id = 1  # Temporal
+    favorite = Favorite.query.filter_by(user_id=user_id, planet_id=planet_id).first()
+    if favorite is None:
+        return jsonify({"error": "Favorite not found"}), 404
+    db.session.delete(favorite)
+    db.session.commit()
+    return jsonify({"msg": "Planet removed from favorites"}), 200
+
+
+@app.route('/favorite/people/<int:people_id>', methods=['DELETE'])
+def delete_favorite_people(people_id):
+    user_id = 1  # Temporal
+    favorite = Favorite.query.filter_by(user_id=user_id, people_id=people_id).first()
+    if favorite is None:
+        return jsonify({"error": "Favorite not found"}), 404
+    db.session.delete(favorite)
+    db.session.commit()
+    return jsonify({"msg": "People removed from favorites"}), 200
+
 
 
 # this only runs if `$ python src/app.py` is executed
